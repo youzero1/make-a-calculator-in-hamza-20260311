@@ -1,0 +1,186 @@
+'0') return;
+
+      const newExpression = expression === '0' ? value : expression + value;
+      setExpression(newExpression);
+      setDisplayResult(newExpression);
+    },
+    [expression, shouldResetOnInput]
+  );
+
+  const handleOperator = useCallback(
+    (op: string) => {
+      setShouldResetOnInput(false);
+
+      if (!expression) {
+        if (op === '-') {
+          setExpression('-');
+          setDisplayResult('-');
+        }
+        return;
+      }
+
+      // Replace trailing operator
+      const lastChar = expression[expression.length - 1];
+      if (isOperator(lastChar) || lastChar === '.') {
+        const newExpr = expression.slice(0, -1) + op;
+        setExpression(newExpr);
+        setDisplayResult(newExpr);
+        return;
+      }
+
+      const newExpr = expression + op;
+      setExpression(newExpr);
+      setDisplayResult(newExpr);
+    },
+    [expression]
+  );
+
+  const handleDecimal = useCallback(() => {
+    if (shouldResetOnInput) {
+      setExpression('0.');
+      setDisplayResult('0.');
+      setShouldResetOnInput(false);
+      return;
+    }
+
+    // Find the last number segment
+    const parts = expression.split(/[+\-×÷]/);
+    const lastPart = parts[parts.length - 1];
+
+    if (lastPart && lastPart.includes('.')) return;
+
+    const newExpr = expression ? expression + '.' : '0.';
+    setExpression(newExpr);
+    setDisplayResult(newExpr);
+  }, [expression, shouldResetOnInput]);
+
+  const handleEquals = useCallback(() => {
+    if (!expression) return;
+
+    const lastChar = expression[expression.length - 1];
+    if (isOperator(lastChar) || lastChar === '.') return;
+
+    const result = evaluateExpression(expression);
+    setDisplayResult(result);
+
+    if (result !== 'Error') {
+      saveCalculation(expression, result);
+    }
+
+    setExpression(result === 'Error' ? '' : result);
+    setShouldResetOnInput(true);
+  }, [expression]);
+
+  const handleClear = useCallback(() => {
+    setExpression('');
+    setDisplayResult('0');
+    setShouldResetOnInput(false);
+  }, []);
+
+  const handleBackspace = useCallback(() => {
+    if (shouldResetOnInput) {
+      handleClear();
+      return;
+    }
+
+    if (expression.length <= 1) {
+      setExpression('');
+      setDisplayResult('0');
+      return;
+    }
+
+    const newExpr = expression.slice(0, -1);
+    setExpression(newExpr);
+    setDisplayResult(newExpr || '0');
+  }, [expression, shouldResetOnInput, handleClear]);
+
+  const handlePercentage = useCallback(() => {
+    if (!expression) return;
+
+    const result = evaluateExpression(expression);
+    if (result === 'Error') return;
+
+    const percentValue = String(parseFloat(result) / 100);
+    setExpression(percentValue);
+    setDisplayResult(percentValue);
+    setShouldResetOnInput(true);
+  }, [expression]);
+
+  const handleToggleSign = useCallback(() => {
+    if (!expression || expression === '0') return;
+
+    if (expression.startsWith('-')) {
+      const newExpr = expression.slice(1);
+      setExpression(newExpr);
+      setDisplayResult(newExpr);
+    } else {
+      const newExpr = '-' + expression;
+      setExpression(newExpr);
+      setDisplayResult(newExpr);
+    }
+  }, [expression]);
+
+  const handleSelectCalculation = useCallback((calc: CalculationRecord) => {
+    setExpression(calc.result.toString());
+    setDisplayResult(calc.result.toString());
+    setShouldResetOnInput(true);
+  }, []);
+
+  const handleButtonClick = useCallback(
+    (value: string) => {
+      switch (value) {
+        case 'C':
+          handleClear();
+          break;
+        case '⌫':
+          handleBackspace();
+          break;
+        case '%':
+          handlePercentage();
+          break;
+        case '±':
+          handleToggleSign();
+          break;
+        case '=':
+          handleEquals();
+          break;
+        case '.':
+          handleDecimal();
+          break;
+        default:
+          if (isOperator(value)) {
+            handleOperator(value);
+          } else {
+            handleNumber(value);
+          }
+      }
+    },
+    [
+      handleClear,
+      handleBackspace,
+      handlePercentage,
+      handleToggleSign,
+      handleEquals,
+      handleDecimal,
+      handleOperator,
+      handleNumber,
+    ]
+  );
+
+  // Keyboard support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key;
+
+      if (key >= '0' && key <= '9') {
+        handleButtonClick(key);
+      } else if (key === '+') {
+        handleButtonClick('+');
+      } else if (key === '-') {
+        handleButtonClick('-');
+      } else if (key === '*') {
+        handleButtonClick('×');
+      } else if (key === '/') {
+        e.preventDefault();
+        handleButtonClick('÷');
+      } else if (key
