@@ -1,0 +1,230 @@
+'c' || key === 'C') {
+        handleButtonClick('C');
+      } else if (key === '.') {
+        handleButtonClick('.');
+      } else if (key === '%') {
+        handleButtonClick('%');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleButtonClick]);
+
+  const buttons = [
+    { label: 'C', type: 'action' as const, value: 'C' },
+    { label: '±', type: 'action' as const, value: '±' },
+    { label: '%', type: 'action' as const, value: '%' },
+    { label: '÷', type: 'operator' as const, value: '÷' },
+    { label: '7', type: 'number' as const, value: '7' },
+    { label: '8', type: 'number' as const, value: '8' },
+    { label: '9', type: 'number' as const, value: '9' },
+    { label: '×', type: 'operator' as const, value: '×' },
+    { label: '4', type: 'number' as const, value: '4' },
+    { label: '5', type: 'number' as const, value: '5' },
+    { label: '6', type: 'number' as const, value: '6' },
+    { label: '-', type: 'operator' as const, value: '-' },
+    { label: '1', type: 'number' as const, value: '1' },
+    { label: '2', type: 'number' as const, value: '2' },
+    { label: '3', type: 'number' as const, value: '3' },
+    { label: '+', type: 'operator' as const, value: '+' },
+    { label: '⌫', type: 'action' as const, value: '⌫' },
+    { label: '0', type: 'number' as const, value: '0' },
+    { label: '.', type: 'number' as const, value: '.' },
+    { label: '=', type: 'equals' as const, value: '=' },
+  ];
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.calculator}>
+        <Display expression={expression} result={displayResult} />
+        <div className={styles.grid}>
+          {buttons.map((btn) => (
+            <Button
+              key={btn.label}
+              label={btn.label}
+              type={btn.type}
+              onClick={() => handleButtonClick(btn.value)}
+              gridSpan={btn.gridSpan}
+            />
+          ))}
+        </div>
+      </div>
+      <History
+        history={history}
+        onClearHistory={clearHistory}
+        onSelectCalculation={handleSelectCalculation}
+      />
+    </div>
+  );
+};
+
+export default Calculator;
+</file>
+
+<file path="src/components/Calculator.module.css">
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  max-width: 700px;
+  width: 100%;
+}
+
+.calculator {
+  background: #16213e;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  min-width: 320px;
+  flex: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calculator {
+    min-width: auto;
+  }
+}
+</file>
+
+<file path="src/app/api/calculations/route.ts">
+import { NextRequest, NextResponse } from 'next/server';
+import { getDataSource } from '../../../lib/database';
+import { Calculation } from '../../../entities/Calculation';
+
+export async function GET() {
+  try {
+    const ds = await getDataSource();
+    const repo = ds.getRepository(Calculation);
+    const calculations = await repo.find({
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+    return NextResponse.json({ success: true, data: calculations });
+  } catch (error) {
+    console.error('GET /api/calculations error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch calculations' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { expression, result } = body;
+
+    if (
+      typeof expression !== 'string' ||
+      !expression.trim() ||
+      result === undefined ||
+      result === null
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Expression and result are required' },
+        { status: 400 }
+      );
+    }
+
+    const ds = await getDataSource();
+    const repo = ds.getRepository(Calculation);
+
+    const calculation = repo.create({
+      expression: expression.trim(),
+      result: String(result),
+    });
+
+    const saved = await repo.save(calculation);
+    return NextResponse.json({ success: true, data: saved }, { status: 201 });
+  } catch (error) {
+    console.error('POST /api/calculations error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to save calculation' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    const ds = await getDataSource();
+    const repo = ds.getRepository(Calculation);
+    await repo.clear();
+    return NextResponse.json({ success: true, data: [] });
+  } catch (error) {
+    console.error('DELETE /api/calculations error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to clear calculations' },
+      { status: 500 }
+    );
+  }
+}
+</file>
+
+<file path="Dockerfile">
+# Stage 1: Dependencies
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --frozen-lockfile || npm install
+
+# Stage 2: Build
+FROM node:20-alpine AS builder
+RUN apk add --no-cache libc6-compat python3 make g++
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Remove the TypeScript config to avoid conflict with next.config.js
+RUN rm -f next.config.ts
+
+RUN npm run build
+
+# Stage 3: Production
+FROM node:20-alpine AS runner
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_PATH=/app/data/calculator.db
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Create data directory for SQLite
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+COPY --from=builder /app/public ./public
+
+# Copy standalone output
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Copy better-sqlite3 native bindings
+COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+COPY --from=builder /app/node_modules/bindings ./node_modules/bindings
+COPY --from=builder /app/node_modules/file-uri-to-path ./node_modules/file-uri-to-path
+COPY --from=builder /app/node_modules/prebuild-install ./node_modules/prebuild-install
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV
