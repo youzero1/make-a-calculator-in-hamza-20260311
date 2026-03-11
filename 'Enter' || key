@@ -1,27 +1,6 @@
-'=') handleButton('=');
-      else if (key === 'Backspace') handleButton('backspace');
-      else if (key === 'Escape') handleButton('clear');
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleButton]);
-
-  return (
-    <div className={styles.wrapper}>
-      <div className={styles.container}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Calculator</h1>
-          <button
-            className={styles.historyToggle}
-            onClick={() => setShowHistory(!showHistory)}
-            aria-label="Toggle history"
-            type="button"
-          >
-            {showHistory ? '✕' : '🕐'}
-          </button>
-        </div>
-
-        <div className={styles.calculatorBody}>
-          <Display value={display} expression={expression} />
-
-          <div className={styles
+'=') {
+        e.preventDefault();
+        handleButtonClick('=');
+      } else if (key === 'Backspace') {
+        handleButtonClick('⌫');
+      } else if (key
