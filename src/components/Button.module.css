@@ -1,0 +1,127 @@
+.button {
+  border: none;
+  border-radius: 14px;
+  font-size: 1.3rem;
+  font-weight: 500;
+  cursor: pointer;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  outline: none;
+  letter-spacing: 0.01em;
+}
+
+.button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transition: background 0.1s;
+  border-radius: inherit;
+}
+
+.button:active::after {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.button:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+/* Default digit buttons */
+.default {
+  background: rgba(60, 65, 90, 0.9);
+  color: #ffffff;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.default:hover {
+  background: rgba(75, 80, 110, 0.95);
+}
+
+/* Operator buttons */
+.operator {
+  background: rgba(255, 149, 0, 0.85);
+  color: #ffffff;
+  box-shadow:
+    0 4px 10px rgba(255, 149, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+.operator:hover {
+  background: rgba(255, 165, 30, 0.95);
+}
+
+/* Equals button */
+.equals {
+  background: linear-gradient(135deg, #ff9500, #ff6b00);
+  color: #ffffff;
+  box-shadow:
+    0 4px 15px rgba(255, 107, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.2) inset;
+  font-size: 1.5rem;
+}
+
+.equals:hover {
+  background: linear-gradient(135deg, #ffaa20, #ff7b20);
+  box-shadow:
+    0 6px 20px rgba(255, 107, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.2) inset;
+}
+
+/* Function buttons (C, backspace) */
+.function {
+  background: rgba(100, 110, 140, 0.7);
+  color: #e0e0ff;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  font-size: 1.1rem;
+}
+
+.function:hover {
+  background: rgba(120, 130, 165, 0.85);
+}
+
+/* Zero button (spans 2 columns) */
+.zero {
+  background: rgba(60, 65, 90, 0.9);
+  color: #ffffff;
+  grid-column: span 2;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.3),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.zero:hover {
+  background: rgba(75, 80, 110, 0.95);
+}
+
+@media (max-width: 480px) {
+  .button {
+    height: 56px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+  }
+
+  .equals {
+    font-size: 1.3rem;
+  }
+
+  .function {
+    font-size: 0.95rem;
+  }
+}
